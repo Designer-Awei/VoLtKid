@@ -1,17 +1,15 @@
-//
-//  VoLtKidApp.swift
-//  VoLtKid
-//
-//  Created by 杜文慧A on 2025/8/25.
-//
-
+/**
+ * VoLtKid应用主入口
+ * 六边形电路闯关游戏
+ */
 import SwiftUI
 
 @main
 struct VoLtKidApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            CoverView()
+                .preferredColorScheme(.light)
         }
     }
 }

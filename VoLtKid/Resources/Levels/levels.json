@@ -1,0 +1,43 @@
+[
+  {
+    "id": 1,
+    "title": "点亮小灯泡",
+    "star": 3,
+    "floatOffset": [-60, 40],
+    "size": 3,
+    "components": [
+      {"type":"battery","q":0,"r":0},
+      {"type":"bulb","q":1,"r":0},
+      {"type":"bulb","q":1,"r":-1}
+    ],
+    "startPos": {"q":0,"r":0}
+  },
+  {
+    "id": 2,
+    "title": "增加开关",
+    "star": 2,
+    "floatOffset": [0, -20],
+    "size": 4,
+    "components": [
+      {"type":"battery","q":0,"r":0},
+      {"type":"switch","q":2,"r":0},
+      {"type":"bulb","q":2,"r":-2}
+    ],
+    "startPos": {"q":0,"r":0}
+  },
+  {
+    "id": 3,
+    "title": "复杂电路",
+    "star": 1,
+    "floatOffset": [60, -80],
+    "size": 5,
+    "components": [
+      {"type":"battery","q":0,"r":0},
+      {"type":"switch","q":1,"r":0},
+      {"type":"bulb","q":2,"r":0},
+      {"type":"switch","q":0,"r":2},
+      {"type":"bulb","q":1,"r":2}
+    ],
+    "startPos": {"q":0,"r":0}
+  }
+]
