@@ -416,29 +416,52 @@ class HexScene: SKScene {
      * 检查胜利条件
      */
     private func checkVictoryCondition() {
-        // 简单胜利条件：激活所有元件且形成闭合回路
-        let totalComponents = level.components.count
-        let activatedComponents = componentNodes.values.filter { $0.alpha == 1.0 }.count
+        print("🎮 开始检查电路胜利条件...")
         
-        if activatedComponents >= totalComponents && activatedPath.count > 2 {
-            // 检查是否形成闭合回路
-            if let firstCoord = activatedPath.first, let lastCoord = activatedPath.last {
-                let distance = hexMap.distance(from: firstCoord, to: lastCoord)
-                if distance <= 1 { // 相邻或相同位置认为闭合
-                    handleVictory()
-                }
-            }
+        // 1. 必须激活所有元件
+        let activatedComponents = getActivatedComponents()
+        let totalComponents = level.components.count
+        print("📊 已激活元件: \(activatedComponents.count)/\(totalComponents)")
+        
+        if activatedComponents.count < totalComponents {
+            print("❌ 还有 \(totalComponents - activatedComponents.count) 个元件未激活")
+            return
         }
+        
+        // 2. 必须有电池
+        guard let batteryCoord = findBattery(in: activatedComponents) else {
+            print("❌ 没有找到激活的电池")
+            return
+        }
+        
+        // 3. 必须有灯泡
+        let bulbs = findBulbs(in: activatedComponents)
+        if bulbs.isEmpty {
+            print("❌ 没有找到激活的灯泡")
+            return
+        }
+        
+        // 4. 检查是否形成闭合回路
+        if !hasClosedCircuit(battery: batteryCoord, bulbs: bulbs, components: activatedComponents) {
+            print("❌ 没有形成闭合的电路回路")
+            return
+        }
+        
+        print("🎉 形成了完整的闭合电路！胜利！")
+        handleVictory()
     }
     
     /**
      * 处理胜利
      */
     private func handleVictory() {
+        print("🏆 处理胜利逻辑...")
         gameState = .completed
+        onGameStatusChange?(gameState)
         
         // 计算星级(基于步数或其他因素)
         let stars = calculateStars()
+        print("⭐ 获得星级: \(stars)")
         
         // 胜利特效
         playVictoryEffects()
@@ -446,6 +469,7 @@ class HexScene: SKScene {
         // 延迟调用完成回调
         let delay = SKAction.wait(forDuration: 1.5)
         let completion = SKAction.run { [weak self] in
+            print("🎯 触发游戏完成回调...")
             self?.onGameComplete?(stars)
         }
         run(SKAction.sequence([delay, completion]))
@@ -598,6 +622,10 @@ class HexScene: SKScene {
             return SKColor.systemBlue
         case 2:
             return SKColor.systemPurple
+        case 3:
+            return SKColor.systemPink
+        case 4:
+            return SKColor.systemIndigo
         default:
             return SKColor.systemGray
         }
@@ -623,5 +651,174 @@ class HexScene: SKScene {
         shapeNode.addChild(label)
         
         return shapeNode
+    }
+    
+    // MARK: - 电路分析方法
+    
+    /**
+     * 获取所有已激活的元件
+     * @return 激活元件的坐标和类型字典
+     */
+    private func getActivatedComponents() -> [AxialCoordinate: String] {
+        var activatedComponents: [AxialCoordinate: String] = [:]
+        
+        for (coord, node) in componentNodes {
+            if node.alpha == 1.0 { // 已激活
+                // 从关卡数据中找到对应的元件类型
+                if let component = level.components.first(where: { 
+                    AxialCoordinate(q: $0.q, r: $0.r) == coord 
+                }) {
+                    activatedComponents[coord] = component.type
+                }
+            }
+        }
+        
+        return activatedComponents
+    }
+    
+    /**
+     * 在激活元件中查找电池
+     * @param activatedComponents 已激活的元件
+     * @return 电池坐标，如果没有则返回nil
+     */
+    private func findBattery(in activatedComponents: [AxialCoordinate: String]) -> AxialCoordinate? {
+        return activatedComponents.first { $0.value == "battery" }?.key
+    }
+    
+    /**
+     * 在激活元件中查找所有灯泡
+     * @param activatedComponents 已激活的元件
+     * @return 灯泡坐标数组
+     */
+    private func findBulbs(in activatedComponents: [AxialCoordinate: String]) -> [AxialCoordinate] {
+        return activatedComponents.compactMap { coord, type in
+            type == "bulb" ? coord : nil
+        }
+    }
+    
+    /**
+     * 检查是否形成闭合电路
+     * @param battery 电池坐标
+     * @param bulbs 灯泡坐标数组
+     * @param components 激活的元件
+     * @return 是否形成闭合回路
+     */
+    private func hasClosedCircuit(battery: AxialCoordinate, bulbs: [AxialCoordinate], components: [AxialCoordinate: String]) -> Bool {
+        print("🔄 检查闭合回路: 电池\(battery) → 灯泡\(bulbs)")
+        print("🛤️ 玩家路径: \(activatedPath)")
+        
+        // 检查玩家路径是否形成从电池出发又回到电池的闭合回路
+        guard !activatedPath.isEmpty else {
+            print("❌ 玩家没有移动，无法形成电路")
+            return false
+        }
+        
+        // 获取玩家的完整路径（包括起始位置）
+        var fullPath = [playerPosition] // 当前位置
+        fullPath.append(contentsOf: activatedPath)
+        
+        print("🚶 完整移动路径: \(fullPath)")
+        
+        // 检查路径是否经过所有元件
+        for (coord, _) in components {
+            if !fullPath.contains(coord) {
+                print("❌ 路径没有经过元件: \(coord)")
+                return false
+            }
+        }
+        
+        // 检查是否形成闭合回路（回到起始位置附近）
+        let startPos = level.startPos
+        let currentPos = playerPosition
+        let distance = hexMap.distance(from: AxialCoordinate(q: startPos.q, r: startPos.r), to: currentPos)
+        
+        if distance <= 1 { // 相邻或相同位置认为回到起点
+            print("✅ 已回到起点附近，形成闭合回路！")
+            return true
+        } else {
+            print("❌ 距离起点太远(\(distance))，未形成闭合回路")
+            return false
+        }
+    }
+    
+    /**
+     * 检查从电池到灯泡是否有完整的电路路径
+     * @param from 起点坐标（电池）
+     * @param to 终点坐标（灯泡）
+     * @param through 可通过的激活元件
+     * @return 是否存在有效路径
+     */
+    private func hasCircuitPath(from start: AxialCoordinate, to end: AxialCoordinate, through activatedComponents: [AxialCoordinate: String]) -> Bool {
+        print("🔍 检查路径: \(start) → \(end)")
+        print("📍 可用激活元件: \(activatedComponents)")
+        print("🛤️ 玩家路径: \(activatedPath)")
+        
+        // 如果起点和终点是同一个位置，不算有效路径
+        if start == end {
+            print("❌ 起点和终点相同，不算有效电路")
+            return false
+        }
+        
+        // 使用广度优先搜索(BFS)检查连通性
+        var visited: Set<AxialCoordinate> = []
+        var queue: [AxialCoordinate] = [start]
+        visited.insert(start)
+        
+        while !queue.isEmpty {
+            let current = queue.removeFirst()
+            
+            // 如果到达目标
+            if current == end {
+                print("✅ 找到从电池 \(start) 到灯泡 \(end) 的路径")
+                return true
+            }
+            
+            // 检查所有邻居
+            let neighbors = hexMap.neighbors(of: current)
+            for neighbor in neighbors {
+                if visited.contains(neighbor) {
+                    continue
+                }
+                
+                var canPass = false
+                
+                // 可以通过激活的元件
+                if activatedComponents.keys.contains(neighbor) {
+                    if let componentType = activatedComponents[neighbor] {
+                        if componentType == "switch" {
+                            // 开关必须处于激活状态
+                            canPass = componentNodes[neighbor]?.alpha == 1.0
+                        } else {
+                            // 其他元件（电池、灯泡、连接器）都可以通过
+                            canPass = true
+                        }
+                    }
+                }
+                // 也可以通过玩家走过的路径（作为导线）
+                else if activatedPath.contains(neighbor) {
+                    canPass = true
+                }
+                
+                if canPass {
+                    visited.insert(neighbor)
+                    queue.append(neighbor)
+                    print("🚶 可以通过: \(neighbor)")
+                }
+            }
+        }
+        
+        print("❌ 没有找到从电池 \(start) 到灯泡 \(end) 的完整路径")
+        return false
+    }
+    
+    /**
+     * 检查开关是否处于闭合状态
+     * @param coordinate 开关坐标
+     * @return 是否闭合
+     */
+    private func isSwitchClosed(at coordinate: AxialCoordinate) -> Bool {
+        guard let switchNode = componentNodes[coordinate] else { return false }
+        // 简化实现：激活的开关就是闭合的
+        return switchNode.alpha == 1.0
     }
 }

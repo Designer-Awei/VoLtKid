@@ -17,6 +17,12 @@ final class GameState: ObservableObject {
     /// 当前关卡的星级评价
     @Published var levelStars: [Int: Int] = [:]
     
+    /// 是否首次启动
+    @Published var isFirstLaunch = true
+    
+    /// 音量设置
+    @Published var volume: Double = 0.5
+    
     /// 私有初始化，确保单例模式
     private init() {
         loadGameProgress()
@@ -29,6 +35,8 @@ final class GameState: ObservableObject {
         UserDefaults.standard.set(selectedHeroIndex, forKey: "selectedHeroIndex")
         UserDefaults.standard.set(unlockedLevel, forKey: "unlockedLevel")
         UserDefaults.standard.set(levelStars, forKey: "levelStars")
+        UserDefaults.standard.set(!isFirstLaunch, forKey: "hasLaunchedBefore")
+        UserDefaults.standard.set(volume, forKey: "gameVolume")
     }
     
     /**
@@ -38,6 +46,8 @@ final class GameState: ObservableObject {
         selectedHeroIndex = UserDefaults.standard.integer(forKey: "selectedHeroIndex")
         unlockedLevel = max(1, UserDefaults.standard.integer(forKey: "unlockedLevel"))
         levelStars = UserDefaults.standard.dictionary(forKey: "levelStars") as? [Int: Int] ?? [:]
+        isFirstLaunch = !UserDefaults.standard.bool(forKey: "hasLaunchedBefore")
+        volume = UserDefaults.standard.object(forKey: "gameVolume") as? Double ?? 0.5
     }
     
     /**
@@ -58,5 +68,13 @@ final class GameState: ObservableObject {
      */
     func isLevelUnlocked(_ levelId: Int) -> Bool {
         return levelId <= unlockedLevel
+    }
+    
+    /**
+     * 标记首次启动完成
+     */
+    func markFirstLaunchCompleted() {
+        isFirstLaunch = false
+        saveGameProgress()
     }
 }

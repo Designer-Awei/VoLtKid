@@ -17,11 +17,13 @@ struct SelectRoleView: View {
     /// 游戏状态管理
     @StateObject private var gameState = GameState.shared
     
-    /// 可选角色列表(从Resources/Roles目录动态获取)
+    /// 可选角色列表(扩展到5个角色)
     private let roles = [
         "角色选择_角色1",
         "角色选择_角色2", 
-        "角色选择_角色3"
+        "角色选择_角色3",
+        "角色选择_角色4",
+        "角色选择_角色5"
     ]
     
     var body: some View {
@@ -161,6 +163,10 @@ struct SelectRoleView: View {
             return "智慧的电学工程师\n能发现最优路径"
         case 2:
             return "活泼的电子小精灵\n拥有特殊跳跃能力"
+        case 3:
+            return "温柔的治愈师\n能修复损坏的电路"
+        case 4:
+            return "神秘的法师\n掌握高级电路魔法"
         default:
             return "神秘的角色\n等待你来发现"
         }
@@ -179,6 +185,10 @@ struct SelectRoleView: View {
             return "lightbulb.circle.fill"
         case 2:
             return "star.circle.fill"
+        case 3:
+            return "heart.circle.fill"
+        case 4:
+            return "diamond.circle.fill"
         default:
             return "questionmark.circle.fill"
         }
@@ -197,6 +207,10 @@ struct SelectRoleView: View {
             return [.blue, .purple]
         case 2:
             return [.green, .teal]
+        case 3:
+            return [.pink, .purple]
+        case 4:
+            return [.indigo, .blue]
         default:
             return [.gray, .black]
         }

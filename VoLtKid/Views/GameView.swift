@@ -24,6 +24,15 @@ struct GameView: View {
     /// 获得的星级
     @State private var earnedStars = 0
     
+    /// 导航控制
+    @Environment(\.presentationMode) var presentationMode
+    
+    /// 是否显示暂停菜单
+    @State private var showPauseMenu = false
+    
+    /// 胜利弹窗状态
+    @State private var victoryState: VictoryState = .hidden
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -53,23 +62,29 @@ struct GameView: View {
                     }
                 }
                 .padding()
+                
+                // 暂停菜单覆盖层
+                if showPauseMenu {
+                    PauseMenuView(
+                        isPresented: $showPauseMenu,
+                        onResume: {
+                            // 恢复游戏逻辑
+                        },
+                        onRestart: {
+                            restartLevel()
+                        }
+                    )
+                }
             }
         }
         .navigationBarBackButtonHidden(true)
         .onAppear {
             setupGameScene()
         }
-        .alert("关卡完成！", isPresented: $showVictoryAlert) {
-            Button("继续") {
-                // 保存进度并返回地图
-                GameState.shared.completeLevel(level.id, stars: earnedStars)
-            }
-            Button("重新挑战") {
-                restartLevel()
-            }
-        } message: {
-            Text("恭喜完成关卡！获得 \(earnedStars) 颗星！")
-        }
+        .overlay(
+            // 自定义胜利弹窗
+            victoryState == .showing ? victoryOverlay : nil
+        )
     }
     
     /**
@@ -80,6 +95,7 @@ struct GameView: View {
             // 返回按钮
             Button(action: {
                 // 返回关卡地图
+                presentationMode.wrappedValue.dismiss()
             }) {
                 Image(systemName: "arrow.left")
                     .font(.title2)
@@ -108,9 +124,11 @@ struct GameView: View {
             
             Spacer()
             
-            // 重新开始按钮
-            Button(action: restartLevel) {
-                Image(systemName: "arrow.clockwise")
+            // 暂停菜单按钮
+            Button(action: {
+                showPauseMenu = true
+            }) {
+                Image(systemName: "pause.fill")
                     .font(.title2)
                     .foregroundColor(.white)
                     .padding(10)
@@ -186,9 +204,12 @@ struct GameView: View {
         
         // 设置游戏回调
         newScene.onGameComplete = { stars in
-            earnedStars = stars
-            gameStatus = .completed
-            showVictoryAlert = true
+            DispatchQueue.main.async {
+                earnedStars = stars
+                gameStatus = .completed
+                victoryState = .showing
+                print("🎯 游戏完成回调触发，显示胜利弹窗")
+            }
         }
         
         newScene.onGameStatusChange = { status in
@@ -202,9 +223,11 @@ struct GameView: View {
      * 重新开始关卡
      */
     private func restartLevel() {
-        setupGameScene()
+        print("🔄 重新开始关卡")
+        victoryState = .hidden
         gameStatus = .playing
-        showVictoryAlert = false
+        earnedStars = 0
+        setupGameScene()
     }
     
     /**
@@ -222,6 +245,143 @@ struct GameView: View {
             return "电路连接错误"
         }
     }
+    
+    /**
+     * 自定义胜利弹窗
+     */
+    private var victoryOverlay: some View {
+        ZStack {
+            // 背景遮罩
+            Color.black.opacity(0.8)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    // 点击背景不关闭弹窗，强制用户选择
+                }
+            
+            // 弹窗内容
+            VStack(spacing: 25) {
+                // 胜利图标
+                ZStack {
+                    Circle()
+                        .fill(Color.green.opacity(0.3))
+                        .frame(width: 100, height: 100)
+                    
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 50))
+                        .foregroundColor(.green)
+                }
+                
+                // 文字信息
+                VStack(spacing: 12) {
+                    Text("关卡完成！")
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
+                    
+                    Text("恭喜完成关卡！获得 \(earnedStars) 颗星！")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                
+                // 按钮区域
+                VStack(spacing: 12) {
+                    // 继续按钮
+                    Button {
+                        handleContinueButton()
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.right.circle.fill")
+                            Text("继续")
+                                .fontWeight(.semibold)
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color.blue)
+                        .cornerRadius(12)
+                    }
+                    .disabled(victoryState == .processing)
+                    
+                    // 重新挑战按钮
+                    Button {
+                        handleRestartButton()
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.clockwise.circle.fill")
+                            Text("重新挑战")
+                                .fontWeight(.semibold)
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color.orange)
+                        .cornerRadius(12)
+                    }
+                    .disabled(victoryState == .processing)
+                }
+                .padding(.horizontal, 20)
+            }
+            .padding(25)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(getDialogBackgroundColor())
+                    .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 10)
+            )
+            .padding(.horizontal, 50)
+        }
+        .scaleEffect(victoryState == .showing ? 1.0 : 0.9)
+        .opacity(victoryState == .showing ? 1.0 : 0.0)
+        .animation(.spring(response: 0.5, dampingFraction: 0.8), value: victoryState)
+    }
+    
+    /**
+     * 处理继续按钮点击
+     */
+    private func handleContinueButton() {
+        print("🎯 点击继续按钮")
+        guard victoryState == .showing else { return }
+        
+        victoryState = .processing
+        
+        DispatchQueue.main.async {
+            GameState.shared.completeLevel(level.id, stars: earnedStars)
+            victoryState = .hidden
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                presentationMode.wrappedValue.dismiss()
+            }
+        }
+    }
+    
+    /**
+     * 处理重新挑战按钮点击
+     */
+    private func handleRestartButton() {
+        print("🔄 点击重新挑战按钮")
+        guard victoryState == .showing else { return }
+        
+        victoryState = .processing
+        
+        DispatchQueue.main.async {
+            victoryState = .hidden
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                restartLevel()
+            }
+        }
+    }
+    
+    /**
+     * 获取对话框背景颜色
+     */
+    private func getDialogBackgroundColor() -> Color {
+#if os(iOS)
+        return Color(UIColor.systemBackground)
+#else
+        return Color(NSColor.controlBackgroundColor)
+#endif
+    }
 }
 
 /**
@@ -232,6 +392,15 @@ enum GameStatus {
     case connecting // 连接中
     case completed  // 完成
     case failed     // 失败
+}
+
+/**
+ * 胜利弹窗状态
+ */
+enum VictoryState {
+    case hidden     // 隐藏
+    case showing    // 显示中
+    case processing // 处理中
 }
 
 /**

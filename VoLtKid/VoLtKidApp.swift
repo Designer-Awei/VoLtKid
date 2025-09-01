@@ -8,7 +8,7 @@ import SwiftUI
 struct VoLtKidApp: App {
     var body: some Scene {
         WindowGroup {
-            CoverView()
+            AppEntryView()
                 .preferredColorScheme(.light)
         }
     }

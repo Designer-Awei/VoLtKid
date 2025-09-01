@@ -78,8 +78,8 @@ struct CoverView: View {
                         
                         Spacer()
                         
-                        // 开始游戏按钮
-                        NavigationLink(destination: SelectRoleView()) {
+                                                    // 开始游戏按钮
+                            NavigationLink(destination: TutorialDialogView()) {
                             HStack(spacing: 15) {
                                 Image(systemName: "play.fill")
                                     .font(.title2)
