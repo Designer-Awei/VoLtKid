@@ -38,6 +38,9 @@ class HexScene: SKScene {
     /// 玩家当前位置
     private var playerPosition: AxialCoordinate
     
+    /// 移动历史记录
+    private var moveHistory: [(position: AxialCoordinate, activatedComponents: Set<AxialCoordinate>)] = []
+    
     /// 游戏状态
     private var gameState: GameStatus = .playing
     
@@ -340,6 +343,10 @@ class HexScene: SKScene {
      * @param path 移动路径
      */
     private func handlePlayerArrival(at coordinate: AxialCoordinate, path: [AxialCoordinate]) {
+        // 保存当前状态到历史记录
+        let currentActivatedComponents = Set(getActivatedComponents().keys)
+        moveHistory.append((position: playerPosition, activatedComponents: currentActivatedComponents))
+        
         playerPosition = coordinate
         
         // 激活经过的元件
@@ -521,16 +528,125 @@ class HexScene: SKScene {
      * 显示提示
      */
     func showHint() {
-        // TODO: 实现提示功能
-        // 可以高亮显示下一个应该连接的元件
+        print("💡 显示提示")
+        
+        // 找到下一个应该连接的元件
+        let activatedComponents = getActivatedComponents()
+        let allComponents = level.components
+        
+        // 找到第一个未激活的元件
+        for component in allComponents {
+            let coord = AxialCoordinate(q: component.q, r: component.r)
+            if !activatedComponents.keys.contains(coord) {
+                // 高亮显示这个元件
+                if let componentNode = componentNodes[coord] {
+                    highlightComponent(componentNode)
+                }
+                break
+            }
+        }
     }
     
     /**
      * 撤销上一步移动
      */
     func undoLastMove() {
-        // TODO: 实现撤销功能
-        // 保存移动历史，允许撤销操作
+        print("↩️ 撤销上一步移动")
+        
+        guard !moveHistory.isEmpty else {
+            print("❌ 没有可撤销的移动")
+            return
+        }
+        
+        // 获取上一个状态
+        let lastState = moveHistory.removeLast()
+        let lastPosition = lastState.position
+        let lastActivatedComponents = lastState.activatedComponents
+        
+        // 恢复玩家位置
+        playerPosition = lastPosition
+        let newPosition = hexMap.pixelPosition(for: lastPosition)
+        playerNode.position = newPosition
+        
+        // 重置所有组件状态
+        for (coord, node) in componentNodes {
+            if lastActivatedComponents.contains(coord) {
+                // 恢复激活状态
+                node.alpha = 1.0
+                node.color = .yellow
+                node.colorBlendFactor = 0.3
+            } else {
+                // 恢复未激活状态
+                node.alpha = 0.7
+                node.color = getComponentColor(type: getComponentType(at: coord))
+                node.colorBlendFactor = 0.0
+            }
+        }
+        
+        // 更新激活路径
+        activatedPath = Array(lastActivatedComponents)
+        
+        // 移除多余的路径线
+        children.forEach { child in
+            if child.name == "path_line" {
+                child.removeFromParent()
+            }
+        }
+        
+        print("✅ 撤销完成，回到位置: \(lastPosition)")
+    }
+    
+    /**
+     * 更新玩家角色外观
+     */
+    func updatePlayerCharacter() {
+        guard let playerNode = playerNode else { return }
+        
+        let gameState = GameState.shared
+        let newColor = getPlayerColor(heroIndex: gameState.selectedHeroIndex)
+        
+        // 更新玩家节点颜色
+        playerNode.color = newColor
+        
+        // 移除旧的形状节点
+        playerNode.children.forEach { child in
+            if let shapeNode = child as? SKShapeNode, child.name != "selection_ring" {
+                child.removeFromParent()
+            }
+        }
+        
+        // 添加新的玩家形状
+        let newPlayerShape = createPlayerShape(heroIndex: gameState.selectedHeroIndex)
+        newPlayerShape.position = CGPoint.zero
+        playerNode.addChild(newPlayerShape)
+    }
+    
+    /**
+     * 高亮显示组件
+     */
+    private func highlightComponent(_ componentNode: SKSpriteNode) {
+        // 移除之前的高亮效果
+        componentNode.removeAction(forKey: "hint_highlight")
+        
+        // 创建高亮动画
+        let scaleUp = SKAction.scale(to: 1.3, duration: 0.5)
+        let scaleDown = SKAction.scale(to: 1.0, duration: 0.5)
+        let highlight = SKAction.sequence([scaleUp, scaleDown])
+        let repeat3Times = SKAction.repeat(highlight, count: 3)
+        
+        componentNode.run(repeat3Times, withKey: "hint_highlight")
+    }
+    
+    /**
+     * 获取指定坐标的组件类型
+     */
+    private func getComponentType(at coordinate: AxialCoordinate) -> String {
+        for component in level.components {
+            if AxialCoordinate(q: component.q, r: component.r) == coordinate {
+                return component.type
+            }
+        }
+        return "unknown"
     }
     
     // MARK: - 原生UI辅助函数
@@ -615,20 +731,17 @@ class HexScene: SKScene {
      * @return SKColor颜色
      */
     private func getPlayerColor(heroIndex: Int) -> SKColor {
-        switch heroIndex {
-        case 0:
-            return SKColor.systemRed
-        case 1:
-            return SKColor.systemBlue
-        case 2:
-            return SKColor.systemPurple
-        case 3:
-            return SKColor.systemPink
-        case 4:
-            return SKColor.systemIndigo
-        default:
-            return SKColor.systemGray
-        }
+        let colors = CharacterConfig.getCharacterColors(at: heroIndex)
+        let primaryColor = colors.first ?? .gray
+        
+        // 将SwiftUI Color转换为SKColor
+        #if canImport(UIKit)
+        return SKColor(primaryColor)
+        #elseif canImport(AppKit)
+        return SKColor(primaryColor)
+        #else
+        return SKColor.systemGray
+        #endif
     }
     
     /**
@@ -642,15 +755,40 @@ class HexScene: SKScene {
         shapeNode.strokeColor = .black
         shapeNode.lineWidth = 3
         
-        // 添加角色标识
-        let label = SKLabelNode(text: "\(heroIndex + 1)")
-        label.fontName = "Arial-Bold"
-        label.fontSize = 24
+        // 使用角色图标而不是数字
+        let characterIcon = CharacterConfig.getCharacterIcon(at: heroIndex)
+        
+        // 创建图标标签 - 使用SF Symbol
+        let label = SKLabelNode(text: getIconSymbol(for: characterIcon))
+        label.fontName = "SF Pro Display"  // 支持SF Symbols的字体
+        label.fontSize = 20
         label.fontColor = .black
         label.verticalAlignmentMode = .center
         shapeNode.addChild(label)
         
         return shapeNode
+    }
+    
+    /**
+     * 将图标名称转换为可显示的符号
+     * @param iconName SF Symbol名称
+     * @return 可显示的符号字符
+     */
+    private func getIconSymbol(for iconName: String) -> String {
+        switch iconName {
+        case "bolt.circle.fill":
+            return "⚡"
+        case "lightbulb.circle.fill":
+            return "💡"
+        case "star.circle.fill":
+            return "⭐"
+        case "heart.circle.fill":
+            return "❤️"
+        case "diamond.circle.fill":
+            return "💎"
+        default:
+            return "?"
+        }
     }
     
     // MARK: - 电路分析方法

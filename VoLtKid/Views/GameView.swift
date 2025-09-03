@@ -25,13 +25,16 @@ struct GameView: View {
     @State private var earnedStars = 0
     
     /// 导航控制
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     
     /// 是否显示暂停菜单
     @State private var showPauseMenu = false
     
     /// 胜利弹窗状态
     @State private var victoryState: VictoryState = .hidden
+    
+    /// 游戏状态监听（用于角色切换）
+    @StateObject private var gameState = GameState.shared
     
     var body: some View {
         GeometryReader { geometry in
@@ -81,6 +84,10 @@ struct GameView: View {
         .onAppear {
             setupGameScene()
         }
+        .onChange(of: gameState.selectedHeroIndex) { _ in
+            // 当角色切换时，更新游戏场景中的角色外观
+            scene?.updatePlayerCharacter()
+        }
         .overlay(
             // 自定义胜利弹窗
             victoryState == .showing ? victoryOverlay : nil
@@ -95,7 +102,7 @@ struct GameView: View {
             // 返回按钮
             Button(action: {
                 // 返回关卡地图
-                presentationMode.wrappedValue.dismiss()
+                dismiss()
             }) {
                 Image(systemName: "arrow.left")
                     .font(.title2)
@@ -149,15 +156,15 @@ struct GameView: View {
             }) {
                 HStack(spacing: 5) {
                     Image(systemName: "lightbulb")
+                        .foregroundColor(.orange)
                     Text("提示")
+                        .foregroundColor(.white)
                 }
                 .font(.caption)
-                .foregroundColor(.white)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color.orange.opacity(0.8))
-                .cornerRadius(15)
             }
+            .buttonStyle(.plain)
             
             Spacer()
             
@@ -178,15 +185,15 @@ struct GameView: View {
             }) {
                 HStack(spacing: 5) {
                     Image(systemName: "arrow.uturn.backward")
+                        .foregroundColor(.blue)
                     Text("撤销")
+                        .foregroundColor(.white)
                 }
                 .font(.caption)
-                .foregroundColor(.white)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color.blue.opacity(0.8))
-                .cornerRadius(15)
             }
+            .buttonStyle(.plain)
         }
     }
     
@@ -344,12 +351,15 @@ struct GameView: View {
         
         victoryState = .processing
         
-        DispatchQueue.main.async {
-            GameState.shared.completeLevel(level.id, stars: earnedStars)
+        // 先保存进度
+        GameState.shared.completeLevel(level.id, stars: earnedStars)
+        
+        // 延迟关闭弹窗和返回
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             victoryState = .hidden
             
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                presentationMode.wrappedValue.dismiss()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                dismiss()
             }
         }
     }
@@ -363,10 +373,10 @@ struct GameView: View {
         
         victoryState = .processing
         
-        DispatchQueue.main.async {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             victoryState = .hidden
             
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 restartLevel()
             }
         }

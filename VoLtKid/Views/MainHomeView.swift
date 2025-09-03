@@ -193,7 +193,7 @@ struct MainHomeView: View {
                 actionButton(
                     icon: getCurrentRoleIcon(),
                     title: "选择角色",
-                    subtitle: "当前: 角色\(gameState.selectedHeroIndex + 1)",
+                    subtitle: "当前: \(CharacterConfig.getCharacterName(at: gameState.selectedHeroIndex))",
                     colors: getCurrentRoleColors()
                 )
             }
@@ -337,10 +337,12 @@ struct MainHomeView: View {
                         .frame(width: 80, height: 80)
                 )
                 
-                Text("角色\(index + 1)")
+                Text(CharacterConfig.getCharacterName(at: index))
                     .font(.caption)
                     .fontWeight(.medium)
                     .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
         }
         .buttonStyle(PlainButtonStyle())
@@ -351,54 +353,28 @@ struct MainHomeView: View {
      * 获取当前角色图标
      */
     private func getCurrentRoleIcon() -> String {
-        return getRoleIcon(index: gameState.selectedHeroIndex)
+        return CharacterConfig.getCharacterIcon(at: gameState.selectedHeroIndex)
     }
     
     /**
      * 获取当前角色颜色
      */
     private func getCurrentRoleColors() -> [Color] {
-        return getRoleColors(index: gameState.selectedHeroIndex)
+        return CharacterConfig.getCharacterColors(at: gameState.selectedHeroIndex)
     }
     
     /**
      * 获取角色图标
      */
     private func getRoleIcon(index: Int) -> String {
-        switch index {
-        case 0:
-            return "bolt.circle.fill"
-        case 1:
-            return "lightbulb.circle.fill"
-        case 2:
-            return "star.circle.fill"
-        case 3:
-            return "heart.circle.fill"
-        case 4:
-            return "diamond.circle.fill"
-        default:
-            return "questionmark.circle.fill"
-        }
+        return CharacterConfig.getCharacterIcon(at: index)
     }
     
     /**
      * 获取角色颜色
      */
     private func getRoleColors(index: Int) -> [Color] {
-        switch index {
-        case 0:
-            return [.orange, .red]
-        case 1:
-            return [.blue, .purple]
-        case 2:
-            return [.green, .teal]
-        case 3:
-            return [.pink, .purple]
-        case 4:
-            return [.indigo, .blue]
-        default:
-            return [.gray, .black]
-        }
+        return CharacterConfig.getCharacterColors(at: index)
     }
 }
 

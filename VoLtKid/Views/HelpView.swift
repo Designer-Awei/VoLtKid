@@ -225,40 +225,14 @@ struct HelpView: View {
                     .padding(.horizontal, 20)
                 
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 15), count: 2), spacing: 20) {
-                    roleCard(
-                        index: 0,
-                        name: "电路探险家",
-                        description: "勇敢的先锋，擅长快速连接电路元件",
-                        specialty: "快速移动"
-                    )
-                    
-                    roleCard(
-                        index: 1,
-                        name: "电学工程师",
-                        description: "智慧的学者，能发现最优的电路路径",
-                        specialty: "路径优化"
-                    )
-                    
-                    roleCard(
-                        index: 2,
-                        name: "电子小精灵",
-                        description: "活泼的助手，拥有特殊的跳跃能力",
-                        specialty: "跳跃移动"
-                    )
-                    
-                    roleCard(
-                        index: 3,
-                        name: "治愈师",
-                        description: "温柔的守护者，能修复损坏的电路",
-                        specialty: "电路修复"
-                    )
-                    
-                    roleCard(
-                        index: 4,
-                        name: "电路法师",
-                        description: "神秘的魔法师，掌握高级电路魔法",
-                        specialty: "魔法连接"
-                    )
+                    ForEach(CharacterConfig.characters, id: \.id) { character in
+                        roleCard(
+                            index: character.id,
+                            name: character.name,
+                            description: character.description,
+                            specialty: character.specialty
+                        )
+                    }
                 }
                 .padding(.horizontal, 20)
                 
@@ -367,40 +341,14 @@ struct HelpView: View {
      * 获取角色图标
      */
     private func getRoleIcon(index: Int) -> String {
-        switch index {
-        case 0:
-            return "bolt.circle.fill"
-        case 1:
-            return "lightbulb.circle.fill"
-        case 2:
-            return "star.circle.fill"
-        case 3:
-            return "heart.circle.fill"
-        case 4:
-            return "diamond.circle.fill"
-        default:
-            return "questionmark.circle.fill"
-        }
+        return CharacterConfig.getCharacterIcon(at: index)
     }
     
     /**
      * 获取角色颜色
      */
     private func getRoleColors(index: Int) -> [Color] {
-        switch index {
-        case 0:
-            return [.orange, .red]
-        case 1:
-            return [.blue, .purple]
-        case 2:
-            return [.green, .teal]
-        case 3:
-            return [.pink, .purple]
-        case 4:
-            return [.indigo, .blue]
-        default:
-            return [.gray, .black]
-        }
+        return CharacterConfig.getCharacterColors(at: index)
     }
     
     /**

@@ -12,15 +12,8 @@ struct AppEntryView: View {
     @StateObject private var gameState = GameState.shared
     
     var body: some View {
-        Group {
-            if gameState.isFirstLaunch {
-                // 首次启动：显示封面页
-                CoverView()
-            } else {
-                // 后续启动：直接进入主页
-                MainHomeView()
-            }
-        }
+        // 总是先显示登录页面，由登录页面根据首次启动状态决定后续跳转
+        LoginView()
     }
 }
 

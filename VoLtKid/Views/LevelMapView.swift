@@ -20,6 +20,12 @@ struct LevelMapView: View {
     /// 滚动视图代理
     @State private var scrollProxy: ScrollViewProxy? = nil
     
+    /// 导航控制
+    @Environment(\.dismiss) private var dismiss
+    
+    /// 是否显示暂停菜单
+    @State private var showPauseMenu = false
+    
     var body: some View {
         NavigationStack {
             GeometryReader { geometry in
@@ -68,6 +74,22 @@ struct LevelMapView: View {
                     // 顶部标题栏
                     VStack {
                         HStack {
+                            // 返回主页按钮
+                            Button(action: {
+                                // 返回主页
+                                dismiss()
+                            }) {
+                                Image(systemName: "house.fill")
+                                    .font(.title2)
+                                    .foregroundColor(.white)
+                                    .padding(10)
+                                    .background(Color.blue.opacity(0.8))
+                                    .clipShape(Circle())
+                                    .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
+                            }
+                            
+                            Spacer()
+                            
                             Text("电路冒险之旅")
                                 .font(.title)
                                 .fontWeight(.bold)
@@ -75,19 +97,35 @@ struct LevelMapView: View {
                             
                             Spacer()
                             
-                            // 当前选择的角色头像
-                            APNGImageView(name: "角色选择_角色\(gameState.selectedHeroIndex + 1)")
-                                .frame(width: 50, height: 50)
-                                .clipShape(Circle())
-                                .overlay(
-                                    Circle()
-                                        .stroke(Color.blue, lineWidth: 2)
-                                )
+                            // 暂停菜单按钮
+                            Button(action: {
+                                showPauseMenu = true
+                            }) {
+                                Image(systemName: "pause.fill")
+                                    .font(.title2)
+                                    .foregroundColor(.white)
+                                    .padding(10)
+                                    .background(Color.black.opacity(0.5))
+                                    .clipShape(Circle())
+                            }
                         }
                         .padding(.horizontal, 20)
                         .padding(.top, 10)
                         
                         Spacer()
+                    }
+                    
+                    // 暂停菜单覆盖层
+                    if showPauseMenu {
+                        PauseMenuView(
+                            isPresented: $showPauseMenu,
+                            onResume: {
+                                // 恢复浏览
+                            },
+                            onRestart: {
+                                // 重新加载关卡
+                            }
+                        )
                     }
                 }
             }
@@ -239,7 +277,7 @@ struct FloatingIslandView: View {
                     .cornerRadius(20)
                     .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
                 }
-                .buttonStyle(PlainButtonStyle())
+                .buttonStyle(.plain)
                 .transition(.scale.combined(with: .opacity))
             }
         }

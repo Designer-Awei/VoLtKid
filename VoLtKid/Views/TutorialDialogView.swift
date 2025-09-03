@@ -21,7 +21,7 @@ struct TutorialDialogView: View {
     var fromMainMenu: Bool = false
     
     /// 导航控制
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     
     /// 对话内容数组
     private let dialogs = [
