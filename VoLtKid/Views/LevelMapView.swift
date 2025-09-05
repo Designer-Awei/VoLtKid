@@ -80,13 +80,12 @@ struct LevelMapView: View {
                                 dismiss()
                             }) {
                                 Image(systemName: "house.fill")
-                                    .font(.title2)
-                                    .foregroundColor(.white)
-                                    .padding(10)
-                                    .background(Color.blue.opacity(0.8))
-                                    .clipShape(Circle())
-                                    .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
+                                    .font(.system(size: 32))
+                                    .foregroundColor(.orange)
+                                    .frame(width: 60, height: 60)
+                                    .contentShape(Rectangle())
                             }
+                            .buttonStyle(PlainButtonStyle())
                             
                             Spacer()
                             
@@ -102,15 +101,15 @@ struct LevelMapView: View {
                                 showPauseMenu = true
                             }) {
                                 Image(systemName: "pause.fill")
-                                    .font(.title2)
-                                    .foregroundColor(.white)
-                                    .padding(10)
-                                    .background(Color.black.opacity(0.5))
-                                    .clipShape(Circle())
+                                    .font(.system(size: 32))
+                                    .foregroundColor(.orange)
+                                    .frame(width: 60, height: 60)
+                                    .contentShape(Rectangle())
                             }
+                            .buttonStyle(PlainButtonStyle())
                         }
                         .padding(.horizontal, 20)
-                        .padding(.top, 10)
+                        .padding(.top, 20)
                         
                         Spacer()
                     }

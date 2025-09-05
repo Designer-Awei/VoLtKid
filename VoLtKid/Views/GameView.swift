@@ -26,12 +26,13 @@ struct GameView: View {
     
     /// 导航控制
     @Environment(\.dismiss) private var dismiss
-    
+
     /// 是否显示暂停菜单
     @State private var showPauseMenu = false
-    
+
     /// 胜利弹窗状态
     @State private var victoryState: VictoryState = .hidden
+
     
     /// 游戏状态监听（用于角色切换）
     @StateObject private var gameState = GameState.shared
@@ -105,12 +106,12 @@ struct GameView: View {
                 dismiss()
             }) {
                 Image(systemName: "arrow.left")
-                    .font(.title2)
+                    .font(.system(size: 32))
                     .foregroundColor(.white)
-                    .padding(10)
-                    .background(Color.black.opacity(0.5))
-                    .clipShape(Circle())
+                    .frame(width: 60, height: 60)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(PlainButtonStyle())
             
             Spacer()
             
@@ -136,12 +137,12 @@ struct GameView: View {
                 showPauseMenu = true
             }) {
                 Image(systemName: "pause.fill")
-                    .font(.title2)
+                    .font(.system(size: 32))
                     .foregroundColor(.white)
-                    .padding(10)
-                    .background(Color.black.opacity(0.5))
-                    .clipShape(Circle())
+                    .frame(width: 60, height: 60)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(PlainButtonStyle())
         }
     }
     
@@ -310,13 +311,13 @@ struct GameView: View {
                     }
                     .disabled(victoryState == .processing)
                     
-                    // 重新挑战按钮
+                    // 返回主页按钮
                     Button {
-                        handleRestartButton()
+                        handleHomeButton()
                     } label: {
                         HStack {
-                            Image(systemName: "arrow.clockwise.circle.fill")
-                            Text("重新挑战")
+                            Image(systemName: "house.fill")
+                            Text("返回主页")
                                 .fontWeight(.semibold)
                         }
                         .foregroundColor(.white)
@@ -348,37 +349,34 @@ struct GameView: View {
     private func handleContinueButton() {
         print("🎯 点击继续按钮")
         guard victoryState == .showing else { return }
-        
+
         victoryState = .processing
-        
+
         // 先保存进度
         GameState.shared.completeLevel(level.id, stars: earnedStars)
-        
-        // 延迟关闭弹窗和返回
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            victoryState = .hidden
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                dismiss()
-            }
-        }
+
+        // 直接返回关卡地图
+        victoryState = .hidden
+        dismiss()
     }
-    
+
     /**
-     * 处理重新挑战按钮点击
+     * 处理返回主页按钮点击
      */
-    private func handleRestartButton() {
-        print("🔄 点击重新挑战按钮")
+    private func handleHomeButton() {
+        print("🏠 点击返回主页按钮")
         guard victoryState == .showing else { return }
-        
+
         victoryState = .processing
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            victoryState = .hidden
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                restartLevel()
-            }
+
+        // 先保存进度
+        GameState.shared.completeLevel(level.id, stars: earnedStars)
+
+        // 返回主页（连续dismiss两次）
+        victoryState = .hidden
+        dismiss()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.dismiss()
         }
     }
     

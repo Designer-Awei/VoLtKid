@@ -49,17 +49,16 @@ struct MainHomeView: View {
                             Button(action: {
                                 showMainMenu = true
                             }) {
-                                Image(systemName: "line.3.horizontal")
-                                    .font(.title2)
+                                Image(systemName: "line.horizontal.3")
+                                    .font(.system(size: 32, weight: .heavy))
                                     .foregroundColor(.white)
-                                    .padding(12)
-                                    .background(Color.black.opacity(0.3))
-                                    .clipShape(Circle())
-                                    .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 2)
+                                    .frame(width: 60, height: 60)
+                                    .contentShape(Rectangle())
                             }
+                            .buttonStyle(PlainButtonStyle())
                         }
                         .padding(.horizontal, 20)
-                        .padding(.top, 10)
+                        .padding(.top, 20)
                         
                         Spacer()
                     }

@@ -198,22 +198,21 @@ class HexScene: SKScene {
      */
     private func createComponentNode(component: ComponentData, at coordinate: AxialCoordinate) -> SKSpriteNode {
         let position = hexMap.pixelPosition(for: coordinate)
-        
-        // 使用颜色创建元件占位
-        let componentColor = getComponentColor(type: component.type)
-        let componentNode = SKSpriteNode(color: componentColor, size: CGSize(width: 50, height: 50))
+
+        // 创建透明背景的元件节点
+        let componentNode = SKSpriteNode(color: .clear, size: CGSize(width: 50, height: 50))
         componentNode.position = position
         componentNode.name = "component_\(component.type)_\(coordinate.q)_\(coordinate.r)"
         componentNode.zPosition = 2
-        
+
         // 添加形状和图标
         let shapeNode = createComponentShape(type: component.type)
         shapeNode.position = CGPoint.zero
         componentNode.addChild(shapeNode)
-        
+
         // 添加发光效果(未激活状态)
         componentNode.alpha = 0.7
-        
+
         return componentNode
     }
     
@@ -222,17 +221,15 @@ class HexScene: SKScene {
      */
     private func setupPlayer() {
         let position = hexMap.pixelPosition(for: playerPosition)
-        
-        // 使用颜色和形状创建玩家占位
-        let gameState = GameState.shared
-        let playerColor = getPlayerColor(heroIndex: gameState.selectedHeroIndex)
-        
-        playerNode = SKSpriteNode(color: playerColor, size: CGSize(width: 60, height: 60))
+
+        // 创建透明背景的玩家节点
+        playerNode = SKSpriteNode(color: .clear, size: CGSize(width: 60, height: 60))
         playerNode.position = position
         playerNode.name = "player"
         playerNode.zPosition = 10
-        
+
         // 添加玩家图标
+        let gameState = GameState.shared
         let playerShape = createPlayerShape(heroIndex: gameState.selectedHeroIndex)
         playerShape.position = CGPoint.zero
         playerNode.addChild(playerShape)
@@ -677,51 +674,12 @@ class HexScene: SKScene {
      * @return SKShapeNode形状节点
      */
     private func createComponentShape(type: String) -> SKShapeNode {
-        let shapeNode: SKShapeNode
-        
-        switch type {
-        case "battery":
-            // 电池 - 矩形
-            shapeNode = SKShapeNode(rectOf: CGSize(width: 30, height: 40))
-            shapeNode.fillColor = .white
-            shapeNode.strokeColor = .black
-            shapeNode.lineWidth = 2
-            
-        case "bulb":
-            // 灯泡 - 圆形
-            shapeNode = SKShapeNode(circleOfRadius: 18)
-            shapeNode.fillColor = .white
-            shapeNode.strokeColor = .black
-            shapeNode.lineWidth = 2
-            
-        case "switch":
-            // 开关 - 圆角矩形
-            shapeNode = SKShapeNode(rectOf: CGSize(width: 35, height: 25), cornerRadius: 8)
-            shapeNode.fillColor = .white
-            shapeNode.strokeColor = .black
-            shapeNode.lineWidth = 2
-            
-        case "connector":
-            // 连接器 - 菱形
-            let path = CGMutablePath()
-            path.move(to: CGPoint(x: 0, y: 20))
-            path.addLine(to: CGPoint(x: 15, y: 0))
-            path.addLine(to: CGPoint(x: 0, y: -20))
-            path.addLine(to: CGPoint(x: -15, y: 0))
-            path.closeSubpath()
-            
-            shapeNode = SKShapeNode(path: path)
-            shapeNode.fillColor = .white
-            shapeNode.strokeColor = .black
-            shapeNode.lineWidth = 2
-            
-        default:
-            shapeNode = SKShapeNode(circleOfRadius: 15)
-            shapeNode.fillColor = .gray
-            shapeNode.strokeColor = .black
-            shapeNode.lineWidth = 2
-        }
-        
+        // 所有组件都使用六边形边框，不填充背景
+        let shapeNode = SKShapeNode(path: createHexagonPath(radius: 25))
+        shapeNode.fillColor = .clear  // 移除白色填充背景
+        shapeNode.strokeColor = .black
+        shapeNode.lineWidth = 2
+
         return shapeNode
     }
     
@@ -751,21 +709,34 @@ class HexScene: SKScene {
      */
     private func createPlayerShape(heroIndex: Int) -> SKShapeNode {
         let shapeNode = SKShapeNode(circleOfRadius: 25)
-        shapeNode.fillColor = .white
-        shapeNode.strokeColor = .black
-        shapeNode.lineWidth = 3
-        
-        // 使用角色图标而不是数字
+
+        // 获取角色颜色
+        let colors = CharacterConfig.getCharacterColors(at: heroIndex)
+        let primaryColor = colors.first ?? .gray
+
+        // 将SwiftUI Color转换为SKColor
+        #if canImport(UIKit)
+        shapeNode.fillColor = SKColor(primaryColor)
+        #elseif canImport(AppKit)
+        shapeNode.fillColor = SKColor(primaryColor)
+        #else
+        shapeNode.fillColor = SKColor.systemGray
+        #endif
+
+        shapeNode.strokeColor = .white
+        shapeNode.lineWidth = 2
+
+        // 使用角色图标
         let characterIcon = CharacterConfig.getCharacterIcon(at: heroIndex)
-        
+
         // 创建图标标签 - 使用SF Symbol
         let label = SKLabelNode(text: getIconSymbol(for: characterIcon))
         label.fontName = "SF Pro Display"  // 支持SF Symbols的字体
         label.fontSize = 20
-        label.fontColor = .black
+        label.fontColor = .white
         label.verticalAlignmentMode = .center
         shapeNode.addChild(label)
-        
+
         return shapeNode
     }
     

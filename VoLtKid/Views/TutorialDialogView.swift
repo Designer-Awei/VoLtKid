@@ -169,11 +169,11 @@ struct TutorialDialogView: View {
                     .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
             )
             
-            // 对话框尖角
-            Triangle()
-                .fill(Color.white.opacity(0.95))
-                .frame(width: 20, height: 15)
-                .offset(y: -1)
+            // 对话框尖角（全部去掉）
+            // Triangle()
+            //     .fill(Color.white.opacity(0.95))
+            //     .frame(width: 20, height: 15)
+            //     .offset(y: -1)
         }
         .padding(.horizontal, 30)
         .onTapGesture {

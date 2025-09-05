@@ -464,19 +464,19 @@ struct TutorialGameView: View {
                 
                 // 开始游戏/返回主页按钮
                 Button(action: {
-                    if fromMainMenu {
-                        // 从主菜单触发，返回主页
-                        dismiss()
-                    } else {
-                        // 首次启动，标记完成并返回到主页
-                        GameState.shared.markFirstLaunchCompleted()
+                    print("🏠 新手引导完成，点击返回主页按钮")
+                    // 标记首次启动完成
+                    GameState.shared.markFirstLaunchCompleted()
+                    // 直接返回主页（连续dismiss两次：TutorialGameView -> TutorialDialogView -> MainHomeView）
+                    dismiss()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         dismiss()
                     }
                 }) {
                     HStack(spacing: 15) {
-                        Image(systemName: fromMainMenu ? "house.fill" : "play.fill")
+                        Image(systemName: "house.fill")
                             .font(.title3)
-                        Text(fromMainMenu ? "返回主页" : "开始冒险")
+                        Text("返回主页")
                             .font(.title3)
                             .fontWeight(.semibold)
                     }
@@ -509,12 +509,12 @@ struct TutorialGameView: View {
                 dismiss()
             }) {
                 Image(systemName: "arrow.left")
-                    .font(.title2)
+                    .font(.system(size: 32))
                     .foregroundColor(.white)
-                    .padding(10)
-                    .background(Color.black.opacity(0.5))
-                    .clipShape(Circle())
+                    .frame(width: 60, height: 60)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(PlainButtonStyle())
             
             Spacer()
             

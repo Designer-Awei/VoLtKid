@@ -27,25 +27,21 @@ struct LoginView: View {
                     // 主要内容区域
                     VStack(spacing: 0) {
                         Spacer()
-                        
+                            .frame(height: 100)
+
                         // LOGO区域
                         logoSection
-                        
+
                         Spacer()
-                        
-                        // 角色动画区域
-                        characterSection
-                        
-                        Spacer()
-                        
+
                         // 进入游戏按钮
                         if showEnterButton {
                             enterGameButton
                                 .transition(.scale.combined(with: .opacity))
                         }
-                        
+
                         Spacer()
-                            .frame(height: 60)
+                            .frame(height: 120)
                     }
                     .padding(.horizontal, 30)
                 }
@@ -161,54 +157,6 @@ struct LoginView: View {
         }
     }
     
-    /**
-     * 角色动画区域
-     */
-    private var characterSection: some View {
-        VStack(spacing: 20) {
-            Text("选择你的角色开始冒险")
-                .font(.headline)
-                .foregroundColor(.white.opacity(0.9))
-                .shadow(color: .black.opacity(0.3), radius: 2)
-            
-            // 角色动画
-            HStack(spacing: 30) {
-                ForEach(0..<3, id: \.self) { index in
-                    characterAvatar(index: index)
-                }
-            }
-        }
-    }
-    
-    /**
-     * 角色头像
-     */
-    private func characterAvatar(index: Int) -> some View {
-        ZStack {
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: getCharacterColors(index: index),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 80, height: 80)
-                .scaleEffect(characterScale)
-                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-            
-            Image(systemName: getCharacterIcon(index: index))
-                .font(.system(size: 32, weight: .medium))
-                .foregroundColor(.white)
-                .shadow(color: .black.opacity(0.5), radius: 2)
-        }
-        .animation(
-            .easeInOut(duration: 2.0)
-            .repeatForever(autoreverses: true)
-            .delay(Double(index) * 0.3),
-            value: characterScale
-        )
-    }
     
     /**
      * 进入游戏按钮
@@ -281,37 +229,6 @@ struct LoginView: View {
         }
     }
     
-    /**
-     * 获取角色颜色
-     */
-    private func getCharacterColors(index: Int) -> [Color] {
-        switch index {
-        case 0:
-            return [.orange, .red]
-        case 1:
-            return [.blue, .purple]
-        case 2:
-            return [.green, .teal]
-        default:
-            return [.gray, .black]
-        }
-    }
-    
-    /**
-     * 获取角色图标
-     */
-    private func getCharacterIcon(index: Int) -> String {
-        switch index {
-        case 0:
-            return "bolt.circle.fill"
-        case 1:
-            return "lightbulb.circle.fill"
-        case 2:
-            return "star.circle.fill"
-        default:
-            return "questionmark.circle.fill"
-        }
-    }
 }
 
 /**
